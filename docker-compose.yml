@@ -1,0 +1,45 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: checkoutweb-postgres
+    environment:
+      POSTGRES_USER: checkout_app
+      POSTGRES_PASSWORD: checkout_pass
+      POSTGRES_DB: checkout_db
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init_database.sql:/docker-entrypoint-initdb.d/init_database.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U checkout_app -d checkout_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - checkoutnet
+
+  tomcat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: checkoutweb-tomcat
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/checkoutweb/health || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+    networks:
+      - checkoutnet
+
+volumes:
+  pgdata:
+
+networks:
+  checkoutnet:
+    driver: bridge

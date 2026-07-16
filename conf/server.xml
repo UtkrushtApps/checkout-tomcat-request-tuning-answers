@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Server port="8005" shutdown="SHUTDOWN">
+
+  <Listener className="org.apache.catalina.startup.VersionLoggerListener" />
+  <Listener className="org.apache.catalina.core.JreMemoryLeakPreventionListener" />
+  <Listener className="org.apache.catalina.mbeans.GlobalResourcesLifecycleListener" />
+  <Listener className="org.apache.catalina.core.ThreadLocalLeakPreventionListener" />
+
+  <GlobalNamingResources>
+    <Resource name="UserDatabase" auth="Container"
+              type="org.apache.catalina.UserDatabase"
+              description="User database that can be updated and saved"
+              factory="org.apache.catalina.users.MemoryUserDatabaseFactory"
+              pathname="conf/tomcat-users.xml" />
+  </GlobalNamingResources>
+
+  <Service name="Catalina">
+
+    <!--
+      HTTP/1.1 NIO connector.
+
+      Key changes for request stability under load:
+        - fail fast on slow clients (smaller connectionTimeout)
+        - avoid long-lived keep-alive connections holding resources
+        - keep concurrency bounded with maxThreads
+
+      The JDBC pool wait-time is bounded in conf/context.xml.
+    -->
+    <Connector port="8080"
+               protocol="org.apache.coyote.http11.Http11NioProtocol"
+               maxThreads="50"
+               acceptCount="200"
+               connectionTimeout="5000"
+               maxKeepAliveRequests="100"
+               keepAliveTimeout="10000"
+               redirectPort="8443" />
+
+    <Engine name="Catalina" defaultHost="localhost">
+
+      <Host name="localhost" appBase="webapps"
+            unpackWARs="true" autoDeploy="true">
+
+        <!--
+          Access log valve.
+
+          Includes:
+            - correlation id (X-Request-Id response header set by RequestCorrelationFilter)
+            - HTTP method + path + query (%m %U%q)
+            - status
+            - elapsed request time (%T)
+        -->
+        <Valve className="org.apache.catalina.valves.AccessLogValve"
+               directory="logs"
+               prefix="localhost_access_log"
+               suffix=".txt"
+               pattern="%{X-Request-Id}o %h %l %u %t \"%m %U%q\" %s %b %T" />
+
+      </Host>
+    </Engine>
+  </Service>
+</Server>
